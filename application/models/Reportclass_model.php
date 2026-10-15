@@ -738,32 +738,57 @@ class Reportclass_model extends CI_Model
         return $res;
     }
 
+
     private function sqlsrfsummary($sql_)
     {
-        /*WHERE b.takstatus="Active" 060321*/
         $sql = '
-				SELECT 
-					SUM(cnt_HW) AS cnt_HW, SUM(cnt_SW) AS cnt_SW, SUM(cnt_VC) AS cnt_VC, SUM(cnt_HIS) AS cnt_HIS, 
-					SUM(cnt_IIS) AS cnt_IIS, SUM(cnt_OC) AS cnt_OC, SUM(cnt_unk) AS cnt_unk
+        SELECT
+            COALESCE(SUM(cnt_HW), 0) AS cnt_HW,
+            COALESCE(SUM(cnt_SW), 0) AS cnt_SW,
+            COALESCE(SUM(cnt_VC), 0) AS cnt_VC,
+            COALESCE(SUM(cnt_HIS), 0) AS cnt_HIS,
+            COALESCE(SUM(cnt_IIS), 0) AS cnt_IIS,
+            COALESCE(SUM(cnt_OC), 0) AS cnt_OC,
+            COALESCE(SUM(cnt_unk), 0) AS cnt_unk
+        FROM (
+            SELECT
+                IF(a.tlsid = 1 AND b.tlsrsid = ?, 1, 0) AS cnt_HW,
+                IF(a.tlsid = 2 AND b.tlsrsid = ?, 1, 0) AS cnt_SW,
+                IF(a.tlsid = 3 AND b.tlsrsid = ?, 1, 0) AS cnt_VC,
+                IF(a.tlsid = 4 AND b.tlsrsid = ?, 1, 0) AS cnt_HIS,
+                IF(a.tlsid = 5 AND b.tlsrsid = ?, 1, 0) AS cnt_IIS,
 
-				FROM (
-						SELECT 
-							(IF(a.tlsid=1 AND b.tlsrsid=?, 1, 0)) AS cnt_HW,
-							(IF(a.tlsid=2 AND b.tlsrsid=?, 1, 0)) AS cnt_SW,
-							(IF(a.tlsid=3 AND b.tlsrsid=?, 1, 0)) AS cnt_VC,
-							(IF(a.tlsid=4 AND b.tlsrsid=?, 1, 0)) AS cnt_HIS,
-							(IF(a.tlsid=5 AND b.tlsrsid=?, 1, 0)) AS cnt_IIS,
-							(IF(a.tlsid=6 AND b.tlsrsid=?, 1, 0)) AS cnt_OC,
-							(IF((a.tlsid=0 OR a.tlsid IS NULL) AND b.tlsrsid=?, 1, 0)) AS cnt_unk
-						FROM tbl_service_request a 
-						LEFT JOIN tbl_action_taken b ON a.tsrid=b.tsrid 
-						WHERE b.takstatus="Active" AND a.tsrstatus=? AND b.takdateadded LIKE ? AND b.tlsrsid = ? ' . $sql_ . '
-						GROUP BY b.tsrid, b.takdateadded
-                		ORDER BY b.tsrid ASC
-					) temp';
+                IF(
+                    (
+                        a.tlsid = 6
+                        OR a.tlsid = 0
+                        OR a.tlsid IS NULL
+                    )
+                    AND b.tlsrsid = ?,
+                    1,
+                    0
+                ) AS cnt_OC,
+
+                IF(
+                    b.tlsrsid = ?,
+                    0,
+                    0
+                ) AS cnt_unk
+
+            FROM tbl_service_request a
+            LEFT JOIN tbl_action_taken b
+                ON a.tsrid = b.tsrid
+            WHERE
+                b.takstatus = "Active"
+                AND a.tsrstatus = ?
+                AND b.takdateadded LIKE ?
+                AND b.tlsrsid = ?
+                ' . $sql_ . '
+            GROUP BY b.tsrid, b.takdateadded
+        ) temp';
+
         return $sql;
     }
-
 
 
     private function sqlsrfrep($where, $where_tlsrsid)
