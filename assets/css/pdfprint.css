@@ -1,0 +1,21 @@
+table {
+    border-collapse: collapse;
+    line-height: 4.3mm;
+    font-size: 3mm;
+    text-align: center;
+}
+
+
+.table th, .table td {
+    text-align: center;
+    font-size: 3mm;
+    vertical-align: middle;
+    border: 1px solid #222;
+}
+
+.verified {
+    color: #721c24;
+    background-color: #fae3e5;
+    border-color: #f5c6cb;
+}
+

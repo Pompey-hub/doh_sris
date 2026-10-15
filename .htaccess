@@ -1,0 +1,19 @@
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /sris
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule ^(.*)$ index.php?/$1 [L,QSA]
+
+  RewriteRule ^vendor/ - [F,L]
+
+  # Block ALL hidden files (starting with .)
+  <FilesMatch "^\.">
+    Require all denied
+  </FilesMatch>
+
+  # Block composer & docs
+  <FilesMatch "(composer\.json|composer\.lock|CONTRIBUTING\.md|LICENSE|README)">
+    Require all denied
+  </FilesMatch>
+</IfModule>
