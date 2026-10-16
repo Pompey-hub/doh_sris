@@ -714,30 +714,67 @@ class Reportclass_model extends CI_Model
         return $actionLogs;
     }
 
-
-
     public function srfsummary($mm, $yy, $off, $tlsrsid)
     {
         $this->load->model('Commonclass_model', 'common');
-        $secid_ = $this->common->section($this->session->userdata('secabbrev'));
-        $secid =  isset($secid_[0]['secid']) ? $secid_[0]['secid'] : '';
 
-        $prm = [$tlsrsid, $tlsrsid, $tlsrsid, $tlsrsid, $tlsrsid, $tlsrsid, $tlsrsid, 'Active', '%' . $yy . '-' . $mm . '-%', $tlsrsid];
+        $secid_ = $this->common->section(
+            $this->session->userdata('secabbrev')
+        );
+
+        $secid = isset($secid_[0]['secid'])
+            ? $secid_[0]['secid']
+            : '';
+
+        // Nine category parameters: HW, SW, VC, HIS, IIS,
+        // Other Concerns, WIFI, GOV MAIL, and unknown.
+        $prm = [
+            $tlsrsid,
+            $tlsrsid,
+            $tlsrsid,
+            $tlsrsid,
+            $tlsrsid,
+            $tlsrsid,
+            $tlsrsid,
+            $tlsrsid,
+            $tlsrsid,
+            'Active',
+            '%' . $yy . '-' . $mm . '-%',
+            $tlsrsid
+        ];
 
         $sql_ = '';
+
         if ($off !== '-1') {
             $prm[] = $off;
-            $sql_ = ' AND b.tllid=? ';
+            $sql_ .= ' AND b.tllid=? ';
         }
 
         $prm[] = $secid;
         $sql_ .= ' AND a.secid=? ';
 
         $sql = $this->sqlsrfsummary($sql_);
-        $res = $this->db->query($sql, $prm)->result_array();
-        return $res;
-    }
 
+        $query = $this->db->query($sql, $prm);
+
+        if ($query === false) {
+            log_message(
+                'error',
+                'SRF Summary SQL error: ' .
+                    print_r($this->db->error(), true)
+            );
+
+            log_message('error', 'SRF Summary SQL: ' . $sql);
+            log_message(
+                'error',
+                'SRF Summary parameters: ' . print_r($prm, true)
+            );
+
+            return [];
+        }
+
+        return $query->result_array();
+    }
 
     private function sqlsrfsummary($sql_)
     {
@@ -749,14 +786,25 @@ class Reportclass_model extends CI_Model
             COALESCE(SUM(cnt_HIS), 0) AS cnt_HIS,
             COALESCE(SUM(cnt_IIS), 0) AS cnt_IIS,
             COALESCE(SUM(cnt_OC), 0) AS cnt_OC,
+            COALESCE(SUM(cnt_WIFI), 0) AS cnt_WIFI,
+            COALESCE(SUM(cnt_GOVMAIL), 0) AS cnt_GOVMAIL,
             COALESCE(SUM(cnt_unk), 0) AS cnt_unk
         FROM (
             SELECT
-                IF(a.tlsid = 1 AND b.tlsrsid = ?, 1, 0) AS cnt_HW,
-                IF(a.tlsid = 2 AND b.tlsrsid = ?, 1, 0) AS cnt_SW,
-                IF(a.tlsid = 3 AND b.tlsrsid = ?, 1, 0) AS cnt_VC,
-                IF(a.tlsid = 4 AND b.tlsrsid = ?, 1, 0) AS cnt_HIS,
-                IF(a.tlsid = 5 AND b.tlsrsid = ?, 1, 0) AS cnt_IIS,
+                IF(a.tlsid = 1 AND b.tlsrsid = ?, 1, 0)
+                    AS cnt_HW,
+
+                IF(a.tlsid = 2 AND b.tlsrsid = ?, 1, 0)
+                    AS cnt_SW,
+
+                IF(a.tlsid = 3 AND b.tlsrsid = ?, 1, 0)
+                    AS cnt_VC,
+
+                IF(a.tlsid = 4 AND b.tlsrsid = ?, 1, 0)
+                    AS cnt_HIS,
+
+                IF(a.tlsid = 5 AND b.tlsrsid = ?, 1, 0)
+                    AS cnt_IIS,
 
                 IF(
                     (
@@ -765,30 +813,38 @@ class Reportclass_model extends CI_Model
                         OR a.tlsid IS NULL
                     )
                     AND b.tlsrsid = ?,
-                    1,
-                    0
+                    1, 0
                 ) AS cnt_OC,
 
-                IF(
-                    b.tlsrsid = ?,
-                    0,
-                    0
-                ) AS cnt_unk
+                IF(a.tlsid = 7 AND b.tlsrsid = ?, 1, 0)
+                    AS cnt_WIFI,
+
+                IF(a.tlsid = 8 AND b.tlsrsid = ?, 1, 0)
+                    AS cnt_GOVMAIL,
+
+                IF(b.tlsrsid = ?, 0, 0)
+                    AS cnt_unk
 
             FROM tbl_service_request a
+
             LEFT JOIN tbl_action_taken b
                 ON a.tsrid = b.tsrid
+
             WHERE
                 b.takstatus = "Active"
                 AND a.tsrstatus = ?
                 AND b.takdateadded LIKE ?
                 AND b.tlsrsid = ?
                 ' . $sql_ . '
-            GROUP BY b.tsrid, b.takdateadded
+
+            GROUP BY
+                b.tsrid,
+                b.takdateadded
         ) temp';
 
         return $sql;
     }
+
 
 
     private function sqlsrfrep($where, $where_tlsrsid)

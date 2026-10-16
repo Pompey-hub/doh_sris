@@ -1,7 +1,7 @@
 <?php
 $this->load->view('page/headlink');
 
-// Safely compute the total of all request categories.
+// Calculate the total across every service category.
 $calculateTotal = function ($row) {
     $categories = [
         'cnt_HW',
@@ -10,6 +10,8 @@ $calculateTotal = function ($row) {
         'cnt_IIS',
         'cnt_VC',
         'cnt_OC',
+        'cnt_WIFI',
+        'cnt_GOVMAIL',
         'cnt_unk'
     ];
 
@@ -30,85 +32,145 @@ $calculateTotal = function ($row) {
     .table thead th,
     .table tbody td {
         vertical-align: middle;
+        text-align: center;
+    }
+
+    .table thead th {
+        white-space: normal;
     }
 </style>
 
 <body>
     <?php $this->load->view('page/header'); ?>
+
     <div id="wrapper" style="padding-left: 5px; padding-right: 5px;">
         <div class="bg-white px-2">
+
             <div class="row pt-2 pb-4">
                 <div class="col-6 text-left" style="font-size: 1.2em;">
-                    Generate Report: Consolidated Service Request Summary Report per Actions Taken
+                    Generate Report: Consolidated Service Request Summary
+                    Report per Actions Taken
                 </div>
+
                 <div class="col-6 text-right">
                     <?php
-                    $mm = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+                    $mm = [
+                        'January',
+                        'February',
+                        'March',
+                        'April',
+                        'May',
+                        'June',
+                        'July',
+                        'August',
+                        'September',
+                        'October',
+                        'November',
+                        'December'
+                    ];
                     ?>
 
                     <form class="form-inline" style="float: right;">
 
                         <div class="form-group mx-1 mb-2">
                             <select class="form-control" name="mm">
-                                <option value="" disabled>Select month..</option>
-                                <?php
-                                $len = count($mm);
-                                for ($i = 0; $i < $len; $i++) {
-                                    $sel = $mm_g === $mm[$i] ? 'selected' : '';
-                                ?>
-                                    <option value="<?php echo $mm[$i]; ?>" <?php echo $sel; ?>><?php echo $mm[$i]; ?></option>
-                                <?php
-                                }
-                                ?>
+                                <option value="" disabled>
+                                    Select month..
+                                </option>
+
+                                <?php foreach ($mm as $month): ?>
+                                    <option
+                                        value="<?php echo $month; ?>"
+                                        <?php echo ($mm_g === $month) ? 'selected' : ''; ?>>
+                                        <?php echo $month; ?>
+                                    </option>
+                                <?php endforeach; ?>
                             </select>
                         </div>
+
                         <div class="form-group mx-1 mb-2">
                             <select class="form-control" name="yy">
-                                <option value="" disabled>Select year..</option>
+                                <option value="" disabled>
+                                    Select year..
+                                </option>
+
                                 <?php
-                                $yy = date('Y');
-                                for ($i = $yy; $i > 2018; $i--) {
-                                    $sel = $yy_g == $i ? 'selected' : '';
+                                $currentYear = (int) date('Y');
+
+                                for ($i = $currentYear; $i > 2018; $i--):
                                 ?>
-                                    <option value="<?php echo $i; ?>" <?php echo $sel; ?>><?php echo $i; ?></option>
-                                <?php
-                                }
-                                ?>
+                                    <option
+                                        value="<?php echo $i; ?>"
+                                        <?php echo ((string) $yy_g === (string) $i) ? 'selected' : ''; ?>>
+                                        <?php echo $i; ?>
+                                    </option>
+                                <?php endfor; ?>
                             </select>
                         </div>
+
                         <div class="form-group mx-1 mb-2">
                             <select class="form-control" name="off">
-                                <option value="" disabled>Select officer..</option>
-                                <option value="<?php echo $this->cryptography->encrypt(-1); ?>" <?php echo ($off_g === '-1' ? 'selected' : ''); ?>>All</option>
-                                <?php
-                                $len = count($actoff);
-                                for ($i = 0; $i < $len; $i++) {
-                                    $sel = $off_g === $actoff[$i]['lid'] ? 'selected' : '';
-                                ?>
-                                    <option value="<?php echo $this->cryptography->encrypt($actoff[$i]['lid']); ?>" <?php echo $sel; ?>><?php echo $actoff[$i]['actoff']; ?></option>
-                                <?php
-                                }
-                                ?>
+                                <option value="" disabled>
+                                    Select officer..
+                                </option>
+
+                                <option
+                                    value="<?php echo $this->cryptography->encrypt(-1); ?>"
+                                    <?php echo ($off_g === '-1') ? 'selected' : ''; ?>>
+                                    All
+                                </option>
+
+                                <?php foreach ($actoff as $officer): ?>
+                                    <option
+                                        value="<?php echo $this->cryptography->encrypt($officer['lid']); ?>"
+                                        <?php echo ($off_g === $officer['lid']) ? 'selected' : ''; ?>>
+                                        <?php echo html_escape($officer['actoff']); ?>
+                                    </option>
+                                <?php endforeach; ?>
                             </select>
                         </div>
-                        <button type="submit" class="btn btn-success mx-1 mb-2">Generate</button>
-                        <a href="javascript:void(0);" class="btn btn-primary mx-1 mb-2" id="myprint"><i class="fas fa-print"></i> Print</a>
+
+                        <button
+                            type="submit"
+                            class="btn btn-success mx-1 mb-2">
+                            Generate
+                        </button>
+
+                        <a
+                            href="javascript:void(0);"
+                            class="btn btn-primary mx-1 mb-2"
+                            id="myprint">
+                            <i class="fas fa-print"></i> Print
+                        </a>
                     </form>
                 </div>
             </div>
 
-            <div class="container">
-                <div class="col-12">
-                    <table class="table table-striped table-bordered" style="text-align: center;">
+            <div class="container-fluid">
+                <div class="table-responsive">
+
+                    <table
+                        class="table table-striped table-bordered"
+                        style="text-align: center;">
                         <thead>
                             <tr>
                                 <th rowspan="2">Actions Taken</th>
-                                <th colspan="2">Number of Requests for ITE Support/Others</th>
-                                <th colspan="2">Number of Requests for Technical Assistance</th>
-                                <th rowspan="2">Number of Requests for Video Conference</th>
+
+                                <th colspan="2">
+                                    Number of Requests for ITE Support/Others
+                                </th>
+                                <th colspan="2">
+                                    Number of Requests for Technical Assistance
+                                </th>
+                                <th rowspan="2">
+                                    Number of Requests for Video Conference
+                                </th>
+                                <th rowspan="2">WIFI REGISTRATION</th>
+                                <th rowspan="2">GOV MAIL</th>
                                 <th rowspan="2">Other Concerns</th>
                                 <th rowspan="2">TOTAL</th>
                             </tr>
+
                             <tr>
                                 <th>Hardware</th>
                                 <th>Software</th>
@@ -116,52 +178,69 @@ $calculateTotal = function ($row) {
                                 <th>DOH EV-CHD IN-HOUSE INFORMATION SYSTEM</th>
                             </tr>
                         </thead>
+
                         <tbody>
-                            <tr>
-                                <td>Received</td>
-                                <td><?php echo isset($rcvd[0]['cnt_HW']) ? $rcvd[0]['cnt_HW'] : ''; ?></td>
-                                <td><?php echo isset($rcvd[0]['cnt_SW']) ? $rcvd[0]['cnt_SW'] : ''; ?></td>
-                                <td><?php echo isset($rcvd[0]['cnt_HIS']) ? $rcvd[0]['cnt_HIS'] : ''; ?></td>
-                                <td><?php echo isset($rcvd[0]['cnt_IIS']) ? $rcvd[0]['cnt_IIS'] : ''; ?></td>
-                                <td><?php echo isset($rcvd[0]['cnt_VC']) ? $rcvd[0]['cnt_VC'] : ''; ?></td>
-                                <td><?php echo isset($rcvd[0]['cnt_OC']) ? $rcvd[0]['cnt_OC'] : ''; ?></td>
-                                <td>
-                                    <?php echo $calculateTotal($rcvd[0] ?? []); ?>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>For Action</td>
-                                <td><?php echo isset($actn[0]['cnt_HW']) ? $actn[0]['cnt_HW'] : ''; ?></td>
-                                <td><?php echo isset($actn[0]['cnt_SW']) ? $actn[0]['cnt_SW'] : ''; ?></td>
-                                <td><?php echo isset($actn[0]['cnt_HIS']) ? $actn[0]['cnt_HIS'] : ''; ?></td>
-                                <td><?php echo isset($actn[0]['cnt_IIS']) ? $actn[0]['cnt_IIS'] : ''; ?></td>
-                                <td><?php echo isset($actn[0]['cnt_VC']) ? $actn[0]['cnt_VC'] : ''; ?></td>
-                                <td><?php echo isset($actn[0]['cnt_OC']) ? $actn[0]['cnt_OC'] : ''; ?></td>
-                                <td>
-                                    <?php echo $calculateTotal($actn[0] ?? []); ?>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>Accomplished</td>
-                                <td><?php echo isset($accomp[0]['cnt_HW']) ? $accomp[0]['cnt_HW'] : ''; ?></td>
-                                <td><?php echo isset($accomp[0]['cnt_SW']) ? $accomp[0]['cnt_SW'] : ''; ?></td>
-                                <td><?php echo isset($accomp[0]['cnt_HIS']) ? $accomp[0]['cnt_HIS'] : ''; ?></td>
-                                <td><?php echo isset($accomp[0]['cnt_IIS']) ? $accomp[0]['cnt_IIS'] : ''; ?></td>
-                                <td><?php echo isset($accomp[0]['cnt_VC']) ? $accomp[0]['cnt_VC'] : ''; ?></td>
-                                <td><?php echo isset($accomp[0]['cnt_OC']) ? $accomp[0]['cnt_OC'] : ''; ?></td>
-                                <td>
-                                    <?php echo $calculateTotal($accomp[0] ?? []); ?>
-                                </td>
-                            </tr>
+                            <?php
+                            $rows = [
+                                'Received' => $rcvd[0] ?? [],
+                                'For Action' => $actn[0] ?? [],
+                                'Accomplished' => $accomp[0] ?? []
+                            ];
+
+                            foreach ($rows as $label => $row):
+                            ?>
+                                <tr>
+                                    <td><?php echo $label; ?></td>
+
+                                    <td>
+                                        <?php echo (int) ($row['cnt_HW'] ?? 0); ?>
+                                    </td>
+
+                                    <td>
+                                        <?php echo (int) ($row['cnt_SW'] ?? 0); ?>
+                                    </td>
+
+                                    <td>
+                                        <?php echo (int) ($row['cnt_HIS'] ?? 0); ?>
+                                    </td>
+
+                                    <td>
+                                        <?php echo (int) ($row['cnt_IIS'] ?? 0); ?>
+                                    </td>
+
+                                    <td>
+                                        <?php echo (int) ($row['cnt_VC'] ?? 0); ?>
+                                    </td>
+
+                                    <td>
+                                        <?php echo (int) ($row['cnt_WIFI'] ?? 0); ?>
+                                    </td>
+
+                                    <td>
+                                        <?php echo (int) ($row['cnt_GOVMAIL'] ?? 0); ?>
+                                    </td>
+
+                                    <td>
+                                        <?php echo (int) ($row['cnt_OC'] ?? 0); ?>
+                                    </td>
+
+                                    <td>
+                                        <?php echo $calculateTotal($row); ?>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
                         </tbody>
                     </table>
+
                 </div>
             </div>
+
         </div>
     </div>
-    <?php $this->load->view('page/footer'); ?>
 
+    <?php $this->load->view('page/footer'); ?>
 </body>
 
-
-<script type="text/javascript" src="<?php echo base_url() . 'assets/js/srfsummary.js'; ?>"></script>
+<script
+    type="text/javascript"
+    src="<?php echo base_url('assets/js/srfsummary.js'); ?>"></script>

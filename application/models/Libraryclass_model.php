@@ -16,8 +16,8 @@ class Libraryclass_model extends CI_Model
 		$tlcid = trim($this->input->post('tlcid'));
 
 		$prm = [
-	        'tlccat' => trim($this->input->post('tlccat')),
-	        'tlcstatus' => trim($this->input->post('tlcstatus'))
+			'tlccat' => trim($this->input->post('tlccat')),
+			'tlcstatus' => trim($this->input->post('tlcstatus'))
 		];
 
 		if (strlen($tlcid) === 0) {
@@ -38,16 +38,29 @@ class Libraryclass_model extends CI_Model
 		return $this->db->get()->result_array();
 	}
 
-
 	/*start subcategory*/
 	public function sqldtsubcategory()
 	{
-		$sql = 'SELECT a.*, b.tlccat, c.tlsdesc, CONCAT(d.tlltype, " - ", d.tllstype) AS tlltype
-				FROM tbl_lib_subcategory a 
-				LEFT JOIN tbl_lib_category b ON a.tlcid=b.tlcid
-				LEFT JOIN tbl_lib_services c ON a.tlsid=c.tlsid
-				LEFT JOIN tbl_lib_level d ON a.tll_id=d.tll_id
-				WHERE a.tlcproblem LIKE ? OR a.tlcproblem_desc LIKE ? OR b.tlccat LIKE ?';
+		$sql = '
+        SELECT
+            a.*,
+            b.tlccat,
+            c.tlsdesc,
+            CONCAT(d.tlltype, " - ", d.tllstype) AS tlltype,
+            d.tlltarget AS tlltarget
+        FROM tbl_lib_subcategory a
+        LEFT JOIN tbl_lib_category b
+            ON a.tlcid = b.tlcid
+        LEFT JOIN tbl_lib_services c
+            ON a.tlsid = c.tlsid
+        LEFT JOIN tbl_lib_level d
+            ON a.tll_id = d.tll_id
+        WHERE
+            a.tlcproblem LIKE ?
+            OR a.tlcproblem_desc LIKE ?
+            OR b.tlccat LIKE ?
+    ';
+
 		return $sql;
 	}
 
@@ -57,12 +70,12 @@ class Libraryclass_model extends CI_Model
 
 		$prm = [
 			'tlcid' => trim($this->input->post('tlcid')),
-	        'tlcproblem' => trim($this->input->post('tlcproblem')),
-	        'tlcproblem_desc' => trim($this->input->post('tlcproblem_desc')),
-	        'tlscstatus' => trim($this->input->post('tlscstatus')),
-	        'tlsid' => trim($this->input->post('tlsid')),
-	        'tll_id' => trim($this->input->post('tll_id'))
- 		];
+			'tlcproblem' => trim($this->input->post('tlcproblem')),
+			'tlcproblem_desc' => trim($this->input->post('tlcproblem_desc')),
+			'tlscstatus' => trim($this->input->post('tlscstatus')),
+			'tlsid' => trim($this->input->post('tlsid')),
+			'tll_id' => trim($this->input->post('tll_id'))
+		];
 
 		if (strlen($tlscid) === 0) {
 			$res = $this->db->insert('tbl_lib_subcategory', $prm);
@@ -81,5 +94,4 @@ class Libraryclass_model extends CI_Model
 		$this->db->where('a.tlscid', $this->input->get('tlscid'));
 		return $this->db->get()->result_array();
 	}
-
 }
